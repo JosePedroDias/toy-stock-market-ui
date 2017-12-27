@@ -56,7 +56,7 @@ function LOB(props) {
         <tr>
           <td>
             {bids.map(b => (
-              <div>
+              <div key={"" + b.price}>
                 <span>{b.quantity}</span>|
                 <span>{b.price}</span>
               </div>
@@ -64,7 +64,7 @@ function LOB(props) {
           </td>
           <td>
             {asks.map(b => (
-              <div>
+              <div key={"" + b.price}>
                 <span>{b.quantity}</span>|
                 <span>{b.price}</span>
               </div>
@@ -73,6 +73,37 @@ function LOB(props) {
         </tr>
       </tbody>
     </table>
+  );
+}
+
+function Act(props) {
+  let stockEl, quantEl, priceEl;
+  function _do(action) {
+    return function() {
+      props.onAction(
+        action,
+        stockEl.value,
+        parseInt(quantEl.value, 10),
+        parseFloat(priceEl.value)
+      );
+    };
+  }
+  return (
+    <div>
+      <label htmlFor="stock-act">stock</label>
+      <select id="stock-act" ref={el => (stockEl = el)}>
+        {props.stockNames.map(sn => <option key={sn}>{sn}</option>)}
+      </select>
+      <br />
+      <label htmlFor="quantity-act">quantity</label>
+      <input id="quantity-act" type="number" ref={el => (quantEl = el)} />
+      <br />
+      <label htmlFor="price-act">price</label>
+      <input id="price-act" type="number" ref={el => (priceEl = el)} />
+      <br />
+      <button onClick={_do("bid")}>bid</button>
+      <button onClick={_do("ask")}>ask</button>
+    </div>
   );
 }
 
@@ -95,7 +126,19 @@ class App extends Component {
 
   updateOwns = () => {
     tsmc.trader().then(o => {
-      this.setState({ money: o.money });
+      this.setState({ money: o.money, owns: o.owns });
+    });
+  };
+
+  updateLobs = () => {
+    this.state.stockNames.forEach(name => {
+      tsmc.stockLOB(name).then(lob => {
+        this.setState((state, props) => {
+          const lobs = this.state.stockLobs;
+          lobs[name] = lob;
+          return { stockLobs: lobs };
+        });
+      });
     });
   };
 
@@ -117,6 +160,14 @@ class App extends Component {
     tsmc.logout().then(() => {
       this.setState({ username: undefined, owns: {}, money: 0 });
     });
+  };
+
+  act = (action: string, stock: string, quantity: number, price: number) => {
+    tsmc[action](stock, quantity, price);
+    setTimeout(() => {
+      this.updateLobs();
+      this.updateOwns();
+    }, 2000);
   };
 
   componentWillMount() {
@@ -142,18 +193,6 @@ class App extends Component {
         ) : (
           <LoginForm login={this.login} register={this.register} />
         )}
-
-        <h2>owns:</h2>
-        <ul>
-          {Object.keys(this.state.owns).map(own => {
-            return (
-              <li>
-                {own}: {this.state.owns[own]}
-              </li>
-            );
-          })}
-        </ul>
-
         <h2>stocks:</h2>
         <ul>
           {this.state.stockNames.map(n => (
@@ -162,6 +201,26 @@ class App extends Component {
             </li>
           ))}
         </ul>
+        {this.state.username && (
+          <span>
+            <h2>money:</h2>
+            <span>{this.state.money}</span>
+
+            <h2>owns:</h2>
+            <ul>
+              {Object.keys(this.state.owns).map(own => {
+                return (
+                  <li key={own}>
+                    {own}: {this.state.owns[own]}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <h2>act:</h2>
+            <Act stockNames={this.state.stockNames} onAction={this.act} />
+          </span>
+        )}
       </div>
     );
   }

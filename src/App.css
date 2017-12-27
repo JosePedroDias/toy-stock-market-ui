@@ -1,1 +1,9 @@
+label {
+  display: inline-block;
+  font-weight: bold;
+  width: 8em;
+}
 
+.lob td {
+  vertical-align: top;
+}
