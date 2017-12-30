@@ -3,10 +3,10 @@ declare module "EventEmitter" {
 
   declare class EventEmitter {
     static constructor(): EventEmitter;
-    on(event: string | Symbol, listener: ListenerFn, context?: any): this;
-    once(event: string | Symbol, listener: ListenerFn, context?: any): this;
+    on(event: string, listener: ListenerFn, context?: any): this;
+    once(event: string, listener: ListenerFn, context?: any): this;
     off(
-      event: string | Symbol,
+      event: string,
       listener?: ListenerFn,
       context?: any,
       once?: boolean
