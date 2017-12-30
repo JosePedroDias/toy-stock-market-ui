@@ -1,5 +1,7 @@
 // @flow
 
+import EventEmitter from "EventEmitter";
+
 function _fetch(url: string) {
   return fetch(url).then(res => {
     const contentType: string = res.headers.get("content-type");
@@ -61,15 +63,31 @@ export function trader() {
 // TRADER ACTIONS
 
 export function bid(stockName: string, price: number, quantity: number) {
-  return _fetch(
-    prefix + "/bid/" + token + "/" + stockName + "/" + price + "/" + quantity
-  );
+  return new Promise((resolve, reject) => {
+    _fetch(
+      prefix + "/bid/" + token + "/" + stockName + "/" + price + "/" + quantity
+    ).then(o => {
+      if (o.ok) {
+        resolve();
+      } else {
+        reject(o.error);
+      }
+    });
+  });
 }
 
 export function ask(stockName: string, price: number, quantity: number) {
-  return _fetch(
-    prefix + "/ask/" + token + "/" + stockName + "/" + price + "/" + quantity
-  );
+  return new Promise((resolve, reject) => {
+    _fetch(
+      prefix + "/ask/" + token + "/" + stockName + "/" + price + "/" + quantity
+    ).then(o => {
+      if (o.ok) {
+        resolve();
+      } else {
+        reject(o.error);
+      }
+    });
+  });
 }
 
 // OPEN ENDPOINTS
@@ -89,3 +107,14 @@ export function transactions() {
 export function stats() {
   return _fetch(prefix + "/stats");
 }
+
+export const stockEventEmitter = new EventEmitter();
+
+const source = new EventSource(prefix + "/stream");
+
+source.addEventListener("message", ev => {
+  const data: any = JSON.parse(ev.data);
+  //console.log("SSE", data);
+  stockEventEmitter.emit(data.kind, data);
+  stockEventEmitter.emit("*", data);
+});

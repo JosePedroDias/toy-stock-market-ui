@@ -2,6 +2,7 @@
 
 import React, { Component } from "react";
 import "./App.css";
+import debounce from "./debounce";
 
 import * as tsmc from "./toy-stock-market-client";
 
@@ -83,8 +84,8 @@ function Act(props) {
       props.onAction(
         action,
         stockEl.value,
-        parseInt(quantEl.value, 10),
-        parseFloat(priceEl.value)
+        parseFloat(priceEl.value),
+        parseInt(quantEl.value, 10)
       );
     };
   }
@@ -101,8 +102,9 @@ function Act(props) {
       <label htmlFor="price-act">price</label>
       <input id="price-act" type="number" ref={el => (priceEl = el)} />
       <br />
-      <button onClick={_do("bid")}>bid</button>
-      <button onClick={_do("ask")}>ask</button>
+      <button onClick={_do("bid")}>bid (buy)</button>
+      <button onClick={_do("ask")}>ask (sell)</button>
+      <button onClick={props.onRequestedRefresh}>refresh</button>
     </div>
   );
 }
@@ -142,6 +144,11 @@ class App extends Component {
     });
   };
 
+  updateStuff = () => {
+    this.updateOwns();
+    this.updateLobs();
+  };
+
   login = (user: string, pass: string) => {
     tsmc.login(user, pass).then(() => {
       this.setState({ username: tsmc.isLoggedIn() });
@@ -162,15 +169,27 @@ class App extends Component {
     });
   };
 
-  act = (action: string, stock: string, quantity: number, price: number) => {
-    tsmc[action](stock, quantity, price);
-    setTimeout(() => {
-      this.updateLobs();
-      this.updateOwns();
-    }, 2000);
+  act = (action: string, stock: string, price: number, quantity: number) => {
+    tsmc[action](stock, price, quantity)
+      .then(() => {
+        this.updateStuff();
+      })
+      .catch(err => {
+        console.error(err);
+      });
+  };
+
+  onStreamEvent = ev => {
+    console.log("stream event:", ev);
+    debounce(() => {
+      console.log("debounced refresh"); // @TODO does not seem to be working
+      this.updateStuff();
+    }, 250);
   };
 
   componentWillMount() {
+    tsmc.stockEventEmitter.on("*", this.onStreamEvent);
+
     tsmc.stocks().then(names => {
       this.setState({ stockNames: names });
       names.forEach(name => {
@@ -218,7 +237,11 @@ class App extends Component {
             </ul>
 
             <h2>act:</h2>
-            <Act stockNames={this.state.stockNames} onAction={this.act} />
+            <Act
+              stockNames={this.state.stockNames}
+              onAction={this.act}
+              onRequestedRefresh={this.updateStuff}
+            />
           </span>
         )}
       </div>
