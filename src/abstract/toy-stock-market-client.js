@@ -55,7 +55,7 @@ let token: ?string;
 // TRADER AUTH
 
 export function isLoggedIn(): ?string {
-  return token;
+  return username;
 }
 
 export function register(

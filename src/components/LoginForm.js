@@ -21,7 +21,7 @@ export default function LoginForm(props: LoginFormProps) {
       <button
         onClick={() => {
           const u = (uEl && uEl.value) || "";
-          const p = (uEl && uEl.value) || "";
+          const p = (pEl && pEl.value) || "";
           props.login(u, p);
         }}
       >
@@ -30,7 +30,7 @@ export default function LoginForm(props: LoginFormProps) {
       <button
         onClick={() => {
           const u = (uEl && uEl.value) || "";
-          const p = (uEl && uEl.value) || "";
+          const p = (pEl && pEl.value) || "";
           props.register(u, p, 100);
         }}
       >

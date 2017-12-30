@@ -1,6 +1,6 @@
 {
   "name": "toy-stock-market-ui",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "dependencies": {
     "EventEmitter": "^1.0.0",
     "flow-bin": "^0.61.0",
