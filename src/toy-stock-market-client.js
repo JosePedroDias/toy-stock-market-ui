@@ -2,6 +2,42 @@
 
 import EventEmitter from "EventEmitter";
 
+export type Transaction = {
+  from: string,
+  to: string,
+  price: number,
+  quantity: number,
+  stock: string,
+  when: number
+};
+
+export type BidAskDataLOB = {
+  price: number,
+  quantity: number
+};
+
+export type StockLOB = {
+  bids: Array<BidAskDataLOB>,
+  asks: Array<BidAskDataLOB>
+};
+
+export type HashOfNumber = { [string]: number };
+
+export type TraderWoPass = {
+  money: number,
+  owns: HashOfNumber // stockName -> quantity
+};
+
+export type Stats = {
+  traders: number,
+  tokens: number,
+  stocks: number,
+  queuedActions: number
+};
+
+type SimpleAnswer = { ok: boolean, error: string };
+type TokenAnswer = { ok: boolean, token: string, error: string };
+
 function _fetch(url: string) {
   return fetch(url).then(res => {
     const contentType: string = res.headers.get("content-type");
@@ -12,9 +48,9 @@ function _fetch(url: string) {
   });
 }
 
-const prefix = "//127.0.0.1:3030";
-let username;
-let token;
+const prefix = "//" + window.location.hostname + ":3030";
+let username: ?string;
+let token: ?string;
 
 // TRADER AUTH
 
@@ -22,10 +58,17 @@ export function isLoggedIn() {
   return token ? username : false;
 }
 
-export function register(user: string, pass: string, money: number) {
+export function register(
+  user: string,
+  pass: string,
+  money: number
+): Promise<string> {
   return new Promise((resolve, reject) => {
     _fetch(prefix + "/register/" + user + "/" + pass + "/" + money).then(
-      (o: any) => {
+      (o: TokenAnswer) => {
+        if (!o.ok) {
+          return reject(o.error);
+        }
         token = o.token;
         username = user;
         resolve(token);
@@ -34,9 +77,12 @@ export function register(user: string, pass: string, money: number) {
   });
 }
 
-export function login(user: string, pass: string) {
+export function login(user: string, pass: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    _fetch(prefix + "/login/" + user + "/" + pass).then((o: any) => {
+    _fetch(prefix + "/login/" + user + "/" + pass).then((o: TokenAnswer) => {
+      if (!o.ok) {
+        return reject(o.error);
+      }
       token = o.token;
       username = user;
       resolve(token);
@@ -44,9 +90,13 @@ export function login(user: string, pass: string) {
   });
 }
 
-export function logout() {
+export function logout(): Promise<void> {
+  if (typeof token !== "string") {
+    return Promise.resolve();
+  }
+  const token_: string = token;
   return new Promise((resolve, reject) => {
-    _fetch(prefix + "/logout/" + token).then((o: any) => {
+    _fetch(prefix + "/logout/" + token_).then((o: any) => {
       token = undefined;
       username = undefined;
       resolve();
@@ -56,61 +106,96 @@ export function logout() {
 
 // TRADER GETTERS
 
-export function trader() {
-  return _fetch(prefix + "/trader/" + token);
+export function trader(): Promise<TraderWoPass> {
+  if (token) {
+    return _fetch(prefix + "/trader/" + token);
+  }
+  return Promise.reject("login first");
 }
 
 // TRADER ACTIONS
 
-export function bid(stockName: string, price: number, quantity: number) {
-  return new Promise((resolve, reject) => {
-    _fetch(
-      prefix + "/bid/" + token + "/" + stockName + "/" + price + "/" + quantity
-    ).then(o => {
-      if (o.ok) {
-        resolve();
-      } else {
-        reject(o.error);
-      }
+export function bid(
+  stockName: string,
+  price: number,
+  quantity: number
+): Promise<void> {
+  if (token) {
+    const token_: string = token;
+    return new Promise((resolve, reject) => {
+      _fetch(
+        prefix +
+          "/bid/" +
+          token_ +
+          "/" +
+          stockName +
+          "/" +
+          price +
+          "/" +
+          quantity
+      ).then((o: SimpleAnswer) => {
+        if (o.ok) {
+          resolve();
+        } else {
+          reject(o.error);
+        }
+      });
     });
-  });
+  }
+  return Promise.reject("login first");
 }
 
-export function ask(stockName: string, price: number, quantity: number) {
-  return new Promise((resolve, reject) => {
-    _fetch(
-      prefix + "/ask/" + token + "/" + stockName + "/" + price + "/" + quantity
-    ).then(o => {
-      if (o.ok) {
-        resolve();
-      } else {
-        reject(o.error);
-      }
+export function ask(
+  stockName: string,
+  price: number,
+  quantity: number
+): Promise<void> {
+  if (token) {
+    const token_: string = token;
+    return new Promise((resolve, reject) => {
+      _fetch(
+        prefix +
+          "/ask/" +
+          token_ +
+          "/" +
+          stockName +
+          "/" +
+          price +
+          "/" +
+          quantity
+      ).then((o: SimpleAnswer) => {
+        if (o.ok) {
+          resolve();
+        } else {
+          reject(o.error);
+        }
+      });
     });
-  });
+  }
+  return Promise.reject("login first");
 }
 
 // OPEN ENDPOINTS
 
-export function stocks() {
+export function stocks(): Promise<Array<string>> {
   return _fetch(prefix + "/stock");
 }
 
-export function stockLOB(stockName: string) {
+export function stockLOB(stockName: string): Promise<StockLOB> {
   return _fetch(prefix + "/stock/" + stockName);
 }
 
-export function transactions() {
+export function transactions(): Promise<Array<Transaction>> {
   return _fetch(prefix + "/transactions");
 }
 
-export function stats() {
+export function stats(): Promise<Stats> {
   return _fetch(prefix + "/stats");
 }
 
-export const stockEventEmitter = new EventEmitter();
+export const stockEventEmitter: EventEmitter = new EventEmitter();
 
-const source = new EventSource(prefix + "/stream");
+const source = new window.EventSource(prefix + "/stream");
 
 source.addEventListener("message", ev => {
   const data: any = JSON.parse(ev.data);
