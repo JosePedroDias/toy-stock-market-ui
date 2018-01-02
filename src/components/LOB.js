@@ -1,7 +1,7 @@
 // @flow
 
 import React from "react";
-import type { StockLOB } from "../abstract/toy-stock-market-client";
+import type { StockLOB } from "../abstract/toy-stock-market-client-browser";
 
 type LOBProps = {
   data: StockLOB

@@ -1,12 +1,13 @@
 {
   "name": "toy-stock-market-ui",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "dependencies": {
     "EventEmitter": "^1.0.0",
     "flow-bin": "^0.61.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
-    "react-scripts": "1.0.17"
+    "react-scripts": "1.0.17",
+    "toy-stock-market-client": "^1.0.0"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -4,13 +4,16 @@ import React, { Component } from "react";
 import "./App.css";
 import debounce from "../debounce";
 
-import * as sm from "../abstract/toy-stock-market-client";
-import type { StockLOB } from "../abstract/toy-stock-market-client";
+import tsmcb from "../abstract/toy-stock-market-client-browser";
+import type { StockLOB } from "../abstract/toy-stock-market-client-browser";
 
 import LoginForm from "../components/LoginForm";
 import LogoutForm from "../components/LogoutForm";
 import LOB from "../components/LOB";
 import Act from "../components/Act";
+
+const PREFIX = "//" + window.location.hostname + ":3030";
+const sm = tsmcb(PREFIX);
 
 type AppProps = {};
 
